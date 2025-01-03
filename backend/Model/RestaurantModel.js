@@ -21,22 +21,6 @@ const restaurantSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-  tables: [
-    {
-      tableNumber: {
-        type: Number,
-        required: true,
-      },
-      seats: {
-        type: Number,
-        required: true,
-      },
-      available: {
-        type: Boolean,
-        default: true,
-      },
-    },
-  ],
   image:{
     type:String,
     required: false,
