@@ -1,52 +1,109 @@
 "use client";
 
+import axios from "axios";
+import { useRouter } from "next/navigation";
 import React from "react";
+import toast from "react-hot-toast";
 
 interface Restaurant {
-  _id: string;
   name: string;
   location: string;
   phone: string;
   email: string;
 }
 
-interface UserDetails {
+interface User {
+  _id: string;
   name: string;
   contact: string;
-  numberOfGuests: number;
   dateAndTime: string;
+  numberOfGuests: number;
 }
 
-interface BookingSummaryProps {
+interface BookingProps {
+  setIsSummaryOpen: React.Dispatch<React.SetStateAction<boolean>>;
   restaurantDetails: Restaurant;
-  userDetails: UserDetails;
-  setIsSummaryOpen: (isOpen: boolean) => void;
+  userDetails: User;
 }
 
-const BookingSummary: React.FC<BookingSummaryProps> = ({
+const BookingSummary: React.FC<BookingProps> = ({
+  setIsSummaryOpen,
   restaurantDetails,
   userDetails,
-  setIsSummaryOpen,
 }) => {
-  const handleClose = () => setIsSummaryOpen(false);
+  const router = useRouter();
+
+  const handleClose = () => {
+    setIsSummaryOpen(false);
+  };
+
+  const handleDelete = async () => {
+    try {
+      const response = await axios.delete(
+        `${process.env.NEXT_PUBLIC_API_URL}/booking/${userDetails._id}`
+      );
+      if (response.status === 200) {
+        toast.success("Booking deleted successfully!");
+        setIsSummaryOpen(false);
+        router.push("/");
+      }
+    } catch (error) {
+      console.error("Error deleting booking:", error);
+      toast.error("Failed to delete the booking.");
+    }
+  };
 
   return (
-    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 className="text-2xl font-bold mb-4">Booking Summary</h2>
-        <p><strong>Restaurant Name:</strong> {restaurantDetails.name}</p>
-        <p><strong>Location:</strong> {restaurantDetails.location}</p>
-        <p><strong>Phone:</strong> {restaurantDetails.phone}</p>
-        <p><strong>User Name:</strong> {userDetails.name}</p>
-        <p><strong>Contact:</strong> {userDetails.contact}</p>
-        <p><strong>Number of Guests:</strong> {userDetails.numberOfGuests}</p>
-        <p><strong>Date and Time:</strong> {new Date(userDetails.dateAndTime).toLocaleString()}</p>
-        <button
-          onClick={handleClose}
-          className="mt-4 bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600"
-        >
-          Close
-        </button>
+    <div className="fixed z-[100] inset-0 h-auto flex items-center justify-center bg-black bg-opacity-50">
+      <div className="relative w-full sm:w-[400px] border-4 border-zinc-800 bg-[#aeaeae] rounded-lg shadow-lg mx-4 sm:mx-0">
+        <div className="bg-gray-300 p-4 rounded-lg shadow-md">
+          <div className="pr-4 text-right">
+            <button
+              onClick={handleDelete}
+              className="absolute top-4 right-4 py-1 px-2 bg-red-500 text-white rounded hover:bg-red-600"
+            >
+              Delete
+            </button>
+          </div>
+          <h3 className="text-xl font-semibold">Restaurant Details</h3>
+          <p>
+            <strong>Name:</strong> {restaurantDetails.name || "N/A"}
+          </p>
+          <p>
+            <strong>Location:</strong> {restaurantDetails.location || "N/A"}
+          </p>
+          <p>
+            <strong>Email:</strong> {restaurantDetails.email || "N/A"}
+          </p>
+          <p>
+            <strong>Phone:</strong> {restaurantDetails.phone || "N/A"}
+          </p>
+
+          <h3 className="text-xl font-semibold mt-3">User Details</h3>
+          <p>
+            <strong>Name:</strong> {userDetails.name || "N/A"}
+          </p>
+          <p>
+            <strong>Contact:</strong> {userDetails.contact || "N/A"}
+          </p>
+          <p>
+            <strong>Date & Time:</strong>{" "}
+            {userDetails.dateAndTime
+              ? new Date(userDetails.dateAndTime).toLocaleString()
+              : "N/A"}
+          </p>
+          <p>
+            <strong>Guests:</strong> {userDetails.numberOfGuests || "N/A"}
+          </p>
+          <div className="text-right">
+            <button
+              onClick={handleClose}
+              className="py-2 px-4 bg-green-500 text-white rounded hover:bg-green-600"
+            >
+              Done
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

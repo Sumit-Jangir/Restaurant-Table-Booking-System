@@ -18,6 +18,7 @@ interface Restaurant {
 }
 
 interface UserDetails {
+  _id:string;
   name: string;
   contact: string;
   numberOfGuests: number;
@@ -209,7 +210,7 @@ const Booking = () => {
               timeFormat="HH:mm"
               timeIntervals={30}
               dateFormat="dd/MM/yyyy HH:mm"
-              className="mt-1 w-full sm:w-28  p-2 rounded bg-gray-300"
+              className="mt-1 w-full p-2 rounded bg-gray-300"
               required
               minTime={minTime}
               maxTime={maxTime}
