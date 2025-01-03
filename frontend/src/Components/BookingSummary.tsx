@@ -35,6 +35,7 @@ const BookingSummary: React.FC<BookingProps> = ({
 
   const handleClose = () => {
     setIsSummaryOpen(false);
+    router.push("/");
   };
 
   const handleDelete = async () => {

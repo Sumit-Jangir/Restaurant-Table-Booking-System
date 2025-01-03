@@ -109,6 +109,7 @@ const Booking = () => {
       if (response.status === 201) {
         setUserDetails(response.data.booking);
         setIsSummaryOpen(true);
+        checkAvailableSlots()
         setFormData({
           name: "",
           contact: "",
