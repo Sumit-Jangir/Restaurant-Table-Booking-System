@@ -1,7 +1,7 @@
 services:
   - type: web
-    name: leaderboard-backend
+    name: Backend
     env: node
-    plan: free
-    buildCommand: 'npm install'
-    startCommand: 'npm start'
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    path: /backend
