@@ -16,8 +16,12 @@ interface Restaurant {
   phone: string;
   email: string;
 }
-interface RestaurantContext {
-  selectedRestaurant: Restaurant | null;
+
+interface UserDetails {
+  name: string;
+  contact: string;
+  numberOfGuests: number;
+  dateAndTime: string;
 }
 
 interface Slot {
@@ -26,51 +30,38 @@ interface Slot {
 
 const Booking = () => {
   const [selectedDateTime, setSelectedDateTime] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<Date | null>(null); // Separate state for time
   const [slots, setSlots] = useState<Date[]>([]);
-  const [isSummaryOpen, setIsSummaryOpen] = useState<boolean>(false)
-  const [restaurantDetails, setRestaurantDetails] = useState<any>(null);
-  const [userDetails, setUserDetails] = useState<any>(null);
+  const [isSummaryOpen, setIsSummaryOpen] = useState<boolean>(false);
+  const [restaurantDetails, setRestaurantDetails] = useState<Restaurant | null>(null);
+  const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     contact: "",
     numberOfGuests: 2,
   });
 
-  const router = useRouter()
-
+  const router = useRouter();
   const { selectedRestaurant } = useRestaurantContext();
-
-  console.log(selectedRestaurant?.name);
 
   useEffect(() => {
     if (!selectedRestaurant?.name) {
-      router.push('/');
+      router.push("/");
+    } else {
+      setRestaurantDetails(selectedRestaurant);
     }
-  }, [selectedRestaurant, router]); 
-
+  }, [selectedRestaurant, router]);
 
   const restaurantId = usePathname().split("/")[1];
 
   const handleDateChange = (date: Date | null) => {
     if (date) {
-      setSelectedDateTime(new Date(date));
-      if (selectedTime) {
-        setSelectedDateTime(
-          new Date(
-            date.setHours(selectedTime.getHours(), selectedTime.getMinutes())
-          )
-        );
-      }
+      setSelectedDateTime(date);
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const areDatesEqual = (date1: Date, date2: Date) => {
@@ -85,13 +76,16 @@ const Booking = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!selectedDateTime) {
       toast.error("Please fill in all fields.");
       return;
     }
+
     const checkSlot = slots.some((slot) =>
       areDatesEqual(slot, selectedDateTime)
     );
+
     if (checkSlot) {
       toast.error(
         "Time slot is already taken. Please choose a different time."
@@ -102,7 +96,7 @@ const Booking = () => {
     try {
       const bookingData = {
         ...formData,
-        dateAndTime: selectedDateTime,
+        dateAndTime: selectedDateTime.toISOString(),
         restaurantId,
       };
 
@@ -110,12 +104,10 @@ const Booking = () => {
         `${process.env.NEXT_PUBLIC_API_URL}/booking`,
         bookingData
       );
+
       if (response.status === 201) {
-        // toast.success(response.data.message);
-        setRestaurantDetails(selectedRestaurant);
-        setIsSummaryOpen(true)
-        setUserDetails(response.data.booking)
-        
+        setUserDetails(response.data.booking);
+        setIsSummaryOpen(true);
         setFormData({
           name: "",
           contact: "",
@@ -126,7 +118,7 @@ const Booking = () => {
         toast.error("Failed to create booking: " + response.data.message);
       }
     } catch (error) {
-      alert("Error creating booking");
+      toast.error("Error creating booking");
       console.error(error);
     }
   };
@@ -137,7 +129,7 @@ const Booking = () => {
   const maxTime = new Date();
   maxTime.setHours(23, 0, 0, 0);
 
-  const checkAvailableSlots = async (): Promise<void> => {
+  const checkAvailableSlots = async () => {
     try {
       const response = await axios.get<Slot[]>(
         `${process.env.NEXT_PUBLIC_API_URL}/booking/slots/${restaurantId}`
@@ -147,28 +139,33 @@ const Booking = () => {
         const bookedSlots = response.data;
         setSlots(bookedSlots.map((item) => new Date(item.dateAndTime)));
       } else {
-        alert("Failed to fetch booking slots: " + response.data);
+        toast.error("Failed to fetch booking slots.");
       }
     } catch (error) {
-      alert("Error fetching booking slots");
+      toast.error("Error fetching booking slots.");
       console.error(error);
     }
   };
 
   useEffect(() => {
     checkAvailableSlots();
-  }, [selectedDateTime]);
-
+  }, [restaurantId]);
 
   return (
     <div className="flex items-center h-screen justify-center bg-gray-200">
-      <div className="relative w-full sm:w-[600px] bg-gray-200  border-2 border-zinc-500 rounded-lg shadow-lg p-4 sm:p-6 mx-[10px] sm:mx-0">
+      <div className="relative w-full sm:w-[600px] bg-gray-200 border-2 border-zinc-500 rounded-lg shadow-lg p-4 sm:p-6 mx-[10px] sm:mx-0">
         <div className="flex justify-center mb-3">
           <h2 className="text-3xl font-bold">Booking Form</h2>
         </div>
 
-        {isSummaryOpen && <BookingSummary restaurantDetails={restaurantDetails} setIsSummaryOpen={setIsSummaryOpen} userDetails={userDetails} />
-    }
+        {isSummaryOpen && restaurantDetails && userDetails && (
+          <BookingSummary
+            restaurantDetails={restaurantDetails}
+            setIsSummaryOpen={setIsSummaryOpen}
+            userDetails={userDetails}
+          />
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <h2 className="text-lg">
             {selectedRestaurant?.name
@@ -189,7 +186,6 @@ const Booking = () => {
               />
             </label>
           </div>
-
           <div>
             <label className="block">
               Contact:
@@ -204,7 +200,6 @@ const Booking = () => {
               />
             </label>
           </div>
-
           <div className="flex flex-col">
             Date and Time:
             <DatePicker
@@ -224,10 +219,8 @@ const Booking = () => {
                   slot.getMonth() === selectedDateTime?.getMonth() &&
                   slot.getFullYear() === selectedDateTime?.getFullYear()
               )}
-              onChangeRaw={(e) => {}}
             />
           </div>
-
           <div>
             <label className="block">
               Number of Guests:
@@ -243,7 +236,6 @@ const Booking = () => {
               />
             </label>
           </div>
-
           <div className="flex justify-end">
             <button
               type="submit"

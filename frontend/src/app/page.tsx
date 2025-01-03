@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useRestaurantContext } from "@/Context/RestaurantCotext";
-
 
 interface Restaurant {
   _id: string;
@@ -13,18 +12,17 @@ interface Restaurant {
   location: string;
   phone: string;
   image: string;
-  email:string;
+  email: string;
 }
 
 export default function Home() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const { setSelectedRestaurant } = useRestaurantContext();
+  const router = useRouter();
 
-  const router = useRouter()
-
-  const getRestaurants = async () => {
+  const getRestaurants = useCallback(async () => {
     try {
-      const response = await axios.get(
+      const response = await axios.get<Restaurant[]>(
         `${process.env.NEXT_PUBLIC_API_URL}/restaurent`
       );
 
@@ -35,25 +33,25 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching restaurants:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     getRestaurants();
-  }, []);
+  }, [getRestaurants]);
 
   const handleBooking = (restaurant: Restaurant) => {
-    setSelectedRestaurant(restaurant)
-    router.push(restaurant._id)
+    setSelectedRestaurant(restaurant);
+    router.push(restaurant._id);
   };
 
   return (
-    <div className="flex flex-wrap justify-evenly max-w-[1160px] mx-auto m-3 p-4 gap-7 ">
-      {restaurants.map((item, index) => (
-        <div key={index}>
-          <div key={index} className="bg-gray-200 rounded-lg  ">
+    <div className="flex flex-wrap justify-evenly max-w-[1160px] mx-auto m-3 p-4 gap-7">
+      {restaurants.map((item) => (
+        <div key={item._id}>
+          <div className="bg-gray-200 rounded-lg">
             <Image
-              className="rounded-lg  "
-              src={item?.image}
+              className="rounded-lg"
+              src={item.image}
               alt="Restaurant Image"
               width={255}
               height={100}
@@ -69,9 +67,7 @@ export default function Home() {
               >
                 Book Table
               </button>
-              <p className="text-sm text-gray-600">
-                {item.location}
-              </p>
+              <p className="text-sm text-gray-600">{item.location}</p>
             </div>
           </div>
         </div>
