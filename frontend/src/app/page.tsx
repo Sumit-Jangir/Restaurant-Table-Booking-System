@@ -3,30 +3,26 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Image from "next/image";
-import Booking from "@/Components/Booking";
+import { useRouter } from "next/navigation";
+import { useRestaurantContext } from "@/Context/RestaurantCotext";
 
-interface Table {
-  tableNumber: number;
-  seats: number;
-  available: boolean;
-}
 
 interface Restaurant {
   _id: string;
   name: string;
   location: string;
   phone: string;
-  email: string;
-  tables: Table[];
   image: string;
+  email:string;
 }
 
 export default function Home() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [bookingId, setBookingId] = useState<string | null>(null);
-  const [isBookingOpen, setIsBookingOpen] = useState<boolean>(false);
+  const { setSelectedRestaurant } = useRestaurantContext();
 
-  const getRestaurants = async (): Promise<void> => {
+  const router = useRouter()
+
+  const getRestaurants = async () => {
     try {
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_URL}/restaurent`
@@ -45,9 +41,9 @@ export default function Home() {
     getRestaurants();
   }, []);
 
-  const handleBooking = (restaurantId: string) => {
-    setBookingId(restaurantId);
-    setIsBookingOpen(true);
+  const handleBooking = (restaurant: Restaurant) => {
+    setSelectedRestaurant(restaurant)
+    router.push(restaurant._id)
   };
 
   return (
@@ -68,23 +64,16 @@ export default function Home() {
                 {item.name}
               </h2>
               <button
-                onClick={() => handleBooking(item._id)}
+                onClick={() => handleBooking(item)}
                 className="my-2 py-2 px-4 bg-green-500 text-white rounded hover:bg-green-600"
               >
                 Book Table
               </button>
               <p className="text-sm text-gray-600">
-                {item.location}, Jaipur Rajasthan
+                {item.location}
               </p>
             </div>
           </div>
-          {isBookingOpen && bookingId === item._id && (
-            <Booking
-              setIsBookingOpen={setIsBookingOpen}
-              restaurantId={item._id}
-              // restaurants={restaurants.map(({ _id, name }) => ({ _id, name }))} 
-            />
-          )}
         </div>
       ))}
     </div>
